@@ -1,0 +1,15 @@
+#docxtpl==0.17.0
+Flask==3.0.3
+Flask-RESTful==0.3.10
+flask-cors
+langchain
+langchain_community
+langchain_core
+langchain_openai
+langchain-text-splitters==0.2.2
+langsmith
+langgraph
+openai
+llama_index
+llama_parse
+tavily-python
