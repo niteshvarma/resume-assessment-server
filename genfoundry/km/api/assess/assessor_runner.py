@@ -2,7 +2,7 @@ from flask import request, jsonify
 from flask_restful import Resource, current_app
 import logging
 from langchain_openai import ChatOpenAI
-from .doc_parser import DocumentParser
+from genfoundry.km.preprocess.pymupdf_doc_parser import PyMuPDFDocumentParser
 from .resume_assessor_tool import ResumeAssessorTool
 import os
 import json
@@ -31,11 +31,12 @@ class ResumeAssessorRunner(Resource):
         - Achievements and responsibilities as a list
         - Education and other credentials as a list
         """
-        self.doc_parser = DocumentParser(current_app.config['LLAMA_CLOUD_API_KEY'])
+        #self.doc_parser = DocumentParser(current_app.config['LLAMA_CLOUD_API_KEY'])
         
-        self.resume_parser = DocumentParser(
-            current_app.config['LLAMA_CLOUD_API_KEY'],
-            parsingInstruction)
+        #self.resume_parser = DocumentParser(
+        #    current_app.config['LLAMA_CLOUD_API_KEY'],
+        #    parsingInstruction)
+        self.parser = PyMuPDFDocumentParser()
         self.resume_assessor_tool = ResumeAssessorTool()
         self.llm = ChatOpenAI(
             model_name=current_app.config['LLM_MODEL'], 
@@ -52,9 +53,9 @@ class ResumeAssessorRunner(Resource):
         job_description_file = request.files['job_description']
         resume_file = request.files['resume']
         criteria_file = request.files['criteria']
-        job_description = self.doc_parser.parse_document(job_description_file)
-        resume = self.resume_parser.parse_document(resume_file)    
-        criteria = self.doc_parser.parse_document(criteria_file)
+        job_description = self.parser.parse_document(job_description_file)
+        resume = self.parser.parse_document(resume_file)    
+        criteria = self.parser.parse_document(criteria_file)
 
         try:
             question = "Please assess the resume against the job description and criteria."

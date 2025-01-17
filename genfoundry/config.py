@@ -12,10 +12,12 @@ class Config:
     ANTHROPIC_API_KEY = ""
     project_name = "pt-virtual-sparrow-50"
     PINECONE_INDEX = "default"
+    PINECONE_NAMESPACE = "genfoundry_resume_ai"
 
     #LLM_MODEL = "gpt-3.5-turbo"
     #LLM_MODEL ="gpt-3.5-turbo-16k-0613"
     LLM_MODEL =  "gpt-4o-mini"
+    #LLM_MODEL = "gpt-4o"
     CHUNK_SIZE = "700"
     CHUNK_OVERLAP = "50"
 

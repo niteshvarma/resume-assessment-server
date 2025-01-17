@@ -11,5 +11,11 @@ langsmith
 langgraph
 openai
 llama_index
+llama-index-core
 llama_parse
 tavily-python
+pymupdf4llm
+python-docx>=0.8.11
+reportlab>=3.6.0
+pinecone-client[grpc]==5.0.0
+llama-index-vector-stores-pinecone
