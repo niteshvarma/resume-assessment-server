@@ -4,7 +4,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
-resume_standardization_prompt = '''
+resume_standardization_prompt_json = '''
     You are a document transformer and you are tasked with standardizing resume text into a json string. The resume text will be provided as input and you must return a JSON string with the following format:
 
         {{
@@ -40,7 +40,6 @@ resume_standardization_prompt = '''
                 "Year": ""
                 }}
             ]
-
         }}
 
 **Instructions:**
@@ -98,8 +97,102 @@ Now, process the following resume:
 {question}    
 '''
 
+resume_standardization_prompt_markdown = '''
+You are a document transformer, tasked with converting resume text into a well-structured Markdown format. The input resume will be provided as plain text, and you must return a clean and organized Markdown representation while **retaining the original content exactly as written** under each section.
+
+## **Formatting & Extraction Guidelines**
+- Do not alter the wording, phrasing, or structure of any section from the original resume.
+- Extract and correctly structure information under predefined headings.
+- Use `#` for the candidate’s name.
+- Use `##` for section headings (e.g., Work Experience, Education).
+- Use `###` for subheadings (e.g., job titles, degrees).
+- Use `-` for bulleted lists (e.g., skills, accomplishments).
+- Maintain all bullet points, line breaks, and formatting as they appear in the original content.
+- Ensure any LinkedIn URL is correctly extracted, even if hyperlinked under words like "LinkedIn" or similar.
+- Format dates as `📅 YYYY-MM` or `📅 Month Year` (if full date is available).
+- Return **only** the structured Markdown content —- no additional comments, explanations, or formatting.
+
+---
+
+### **Example Output:**  
+
+# John Doe  
+
+📧 **Email:** john.doe@email.com  
+📞 **Phone:** (123) 456-7890  
+📍 **Location:** San Francisco, CA  
+🔗 **LinkedIn:** [linkedin.com/in/johndoe](https://linkedin.com/in/johndoe)  
+
+## **Professional Summary**  
+Experienced software engineer with 10+ years in backend development, specializing in scalable cloud-based systems, microservices, and DevOps practices.  
+
+## **Career Highlights**  
+- Led the development of a high-traffic payments platform used by 1M+ users.  
+- Spearheaded the migration of a legacy system to microservices, reducing downtime by 40%.  
+- Recognized as "Engineer of the Year" in 2021 for outstanding contributions to product development.  
+
+## **Current Job Title & Experience**  
+- **Title:** Senior Engineer  
+- **Years of Experience:** 10+  
+
+## **Technical Skills**  
+- Python  
+- Flask  
+- Microservices  
+- Kubernetes  
+- CI/CD Pipelines  
+
+## **Leadership Skills**  
+- Team Management  
+- Agile Methodologies  
+- Technical Mentorship  
+
+## **Work Experience**  
+
+### **Senior Engineer - TechCorp**  
+📅 **Jan 2018 - Present**  
+📍 **San Francisco, CA**  
+
+- Led the migration of a monolithic system to a microservices architecture, reducing deployment times by 50%.  
+- Developed CI/CD pipelines using Jenkins and Kubernetes, improving release cycles.  
+- Spearheaded a team of 10 engineers in an Agile environment, enhancing team efficiency.  
+
+### **Software Engineer - StartupX**  
+📅 **2015 - 2018**  
+📍 **San Jose, CA**  
+
+- Built RESTful APIs handling 100K+ requests per minute using Python and Flask.  
+- Optimized SQL queries, reducing database response time by 40%.  
+
+## **Education**  
+
+### **B.Sc. Computer Science - Stanford University**  
+📅 **Graduation Year:** 2014  
+
+## **Certifications**  
+- **AWS Certified Solutions Architect** (2022)  
+- **Certified Kubernetes Administrator** (2021)  
+
+## **Awards**  
+- "Engineer of the Year" - TechCorp (2021)  
+- Best Open Source Contribution - PythonCon (2019)  
+
+## **Publications**  
+- "Scalable Microservices in Python" - Published in ACM Journal (2020)  
+- "Optimizing SQL for High-Performance Applications" - IEEE Software (2018)  
+
+Now, process the following resume:
+-----------------------------------
+**Input Resume:** 
+{resume}
+
+**Question:** 
+{question}   
+'''
+
 metadata_prompt = """
             Analyze the following resume and extract the following details as JSON:
+            - Name of the candidate
             - Latest Job Title
             - Career Domain (e.g., tech, medical, sales, education)
             - Total Years of Experience
@@ -110,9 +203,10 @@ metadata_prompt = """
 
             The JSON response format should be as follows:
             {{
+                "candidate_name": "",
                 "latest_job_title": "",
                 "career_domain": "",
-                "total_years_of_experience": 0,
+                "total_years_of_experience": 5,
                 "technical_skills": [],
                 "leadership_skills": [],
                 "highest_education_level": "",
@@ -148,22 +242,30 @@ class ResumeStandardizer:
             return {f"LLM error: {str(ex)}"},500
     """
 
-    def standardize(self, resume_str):
+    def standardize(self, resume_str, format="json"):
         """
         Standardizes the resume into a structured JSON format and extracts metadata.
         Returns a dictionary with both standardized resume content and metadata.
         """
         try:
             logging.debug("Standardizing resume...")
+            if format == "markdown":
+                resume_standardization_prompt = resume_standardization_prompt_markdown
+            elif format == "json":
+                resume_standardization_prompt = resume_standardization_prompt_json
             
             # Step 1: Standardize the resume
             prompt = PromptTemplate(
                 input_variables=["resume", "question"], 
                 template=resume_standardization_prompt
             )
-            question = "Standardize the resume text into a JSON string"
+            question = "Standardize the resume text in the given format"
             standardized_response = self.get_llm_response(prompt, resume_str, question)
-            standardized_resume = json.loads(standardized_response)
+            
+            if format == "markdown":
+                standardized_resume = standardized_response.strip('"')
+            elif format == "json":
+                standardized_resume = json.loads(standardized_response)
 
             # Step 2: Extract metadata
             metadata = self.extract_metadata(resume_str)

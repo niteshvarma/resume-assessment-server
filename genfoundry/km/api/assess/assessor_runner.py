@@ -2,6 +2,7 @@ from flask import request, jsonify
 from flask_restful import Resource, current_app
 import logging
 from langchain_openai import ChatOpenAI
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from genfoundry.km.preprocess.pymupdf_doc_parser import PyMuPDFDocumentParser
 from .resume_assessor_tool import ResumeAssessorTool
 import os
@@ -21,16 +22,6 @@ class ResumeAssessorRunner(Resource):
             llm_model = current_app.config['LLM_MODEL'],
         )
 
-        parsingInstruction = """The provided document is a resume for job application. Extract the following details from the resume:
-        - Candidate's name
-        - Candidate's location
-        - Overall summary
-        - Company
-        - Role
-        - Duration (start and end year)
-        - Achievements and responsibilities as a list
-        - Education and other credentials as a list
-        """
         #self.doc_parser = DocumentParser(current_app.config['LLAMA_CLOUD_API_KEY'])
         
         #self.resume_parser = DocumentParser(
@@ -43,9 +34,14 @@ class ResumeAssessorRunner(Resource):
             temperature=0, 
             api_key=os.getenv("OPENAI_API_KEY"))
 
- 
+    @jwt_required()  # Ensure the user is authenticated via JWT token
+    def post(self):
+        # Get the current user identity from the JWT token
+        user_id = get_jwt_identity()
 
-    def post(self):        
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        
         if 'job_description' not in request.files or 'resume' not in request.files:
             return jsonify({"error": "Both job_description and resume files are required"}), 400
 
@@ -53,10 +49,14 @@ class ResumeAssessorRunner(Resource):
         job_description_file = request.files['job_description']
         resume_file = request.files['resume']
         criteria_file = request.files['criteria']
+
         job_description = self.parser.parse_document(job_description_file)
         resume = self.parser.parse_document(resume_file)    
         criteria = self.parser.parse_document(criteria_file)
 
+        return self.assess_resume(job_description, resume, criteria)
+
+        """
         try:
             question = "Please assess the resume against the job description and criteria."
             assess_response = self.assessor.assess(job_description, criteria, resume, question)
@@ -79,8 +79,33 @@ class ResumeAssessorRunner(Resource):
         except Exception as e:
             logging.error(f"Assessment failed: {e}")
             return "Server Error", 500
-        
+        """
 
+    def assess_resume(self, job_description, resume, criteria):
+        try:
+            question = "Please assess the resume against the job description and criteria."
+            assess_response = self.assessor.assess(job_description, criteria, resume, question)
+
+            if assess_response.startswith("json"):
+                assess_response = assess_response[4:].strip()
+            
+            logging.debug(f"Answer: {assess_response}")
+
+            if not assess_response or not assess_response.strip():
+                logging.error("Empty response received")
+                return jsonify({"error": "Empty response from assessment tool"}), 500
+
+            # If the response is a JSON string, parse it
+            if isinstance(assess_response, str):
+                parsed_response = json.loads(assess_response)
+
+            # Return the parsed JSON as the HTTP response
+            return jsonify({"AIResponse": parsed_response})
+        except Exception as e:
+            logging.error(f"Assessment failed: {e}")
+            return "Server Error", 500
+
+   
     def _test_data(self):
         job_desc = '''
         Vice President, Information Management and Technology.

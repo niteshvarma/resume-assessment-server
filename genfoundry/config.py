@@ -25,27 +25,20 @@ class Config:
     # MongoDB URI template: "mongodb+srv://admin:<db_password>@genfoundrycluster.qjygr.mongodb.net/?retryWrites=true&w=majority&appName=GenFoundryCluster"
     MONGO_URI = "mongodb+srv://admin:pvvrCbW8A7BIW8AS@genfoundrycluster.qjygr.mongodb.net/?retryWrites=true&w=majority&appName=GenFoundryCluster&tls=true&connectTimeoutMS=30000&socketTimeoutMS=30000"
     MONGO_DB = "DocumentTracker"
-    MONGO_COLL = "UploadedDocs"
+    MONGO_COLLECTION = "Resumes"
+
+    FIREBASE_API_KEY = "AIzaSyDeDh6WxKXzSsS_iSVFGksM_d6UjZrvROw"
 
     LLAMA_CLOUD_API_KEY = "llx-le3jKayUMdnLTwBu1WPZ1RiNIIxueP7aeLEMKQ7CJabtNwfn"
 
-    CORS_ALLOWED_ORIGIN = "http://ec2-3-84-54-171.compute-1.amazonaws.com"
+    CORS_ALLOWED_ORIGIN = "https://recruitr.genfoundry.ca"
     
-    RISK_EXPERT_ANSWER_TEMPLATE = (
-        "You are a Risk Audit expert and are advising other auditors. \n"
-        "You should use a professional tone and provide comprehensive answers and do not leave out relevant points.\n"
-        "Answer the question based only on the given context. If you do not know the answer, say that you do not know.\n"
-        "Step 1. Find the relevant answer based on the DOCUMENT \n"
-        "Step 2. Format in a readable, user-friendly markdown format.\n"
-        "\n"
-        "DOCUMENT:\n"
-        "--------\n"
-        "{context}\n"
-        "\n"
-        "Question:\n"
-        "---------\n"
-        "{question}"
-    )
+    RESUME_DETAILS_POPUP_URL = "https://api.recruitr.genfoundry.ca/resumedetails"
+    #RESUME_DETAILS_POPUP_URL = "http://localhost:5001/resumedetails"
+
+    JWT_SECRET_KEY = "761d296783aab0232a527dfb3776c3fcf1f5c9fc766eedc1c7ad1d6ede20fc8f"
+
+    JWT_ALGORITHM = "HS256"
 
     GENERAL_ANSWER_TEMPLATE = (
         "You are an expert and are providing relevant answers to question asked based on the DOCUMENT provided in the context. \n"

@@ -2,7 +2,7 @@ from flask import request, jsonify
 from flask_restful import Resource, current_app
 import logging
 from langchain_openai import ChatOpenAI
-from .doc_parser import DocumentParser
+from genfoundry.km.utils.doc_parser import DocumentParser
 from .resume_assessor_tool import ResumeAssessorTool
 from .location_assessor_tool import LocationAssessorTool
 from langgraph.prebuilt import create_react_agent

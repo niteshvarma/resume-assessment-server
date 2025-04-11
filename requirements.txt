@@ -15,7 +15,15 @@ llama-index-core
 llama_parse
 tavily-python
 pymupdf4llm
+pymupdf==1.25.2
 python-docx>=0.8.11
 reportlab>=3.6.0
 pinecone-client[grpc]==5.0.0
 llama-index-vector-stores-pinecone
+pymongo
+lz4==4.3.2
+gunicorn
+werkzeug
+python-magic
+firebase-admin
+flask-jwt-extended

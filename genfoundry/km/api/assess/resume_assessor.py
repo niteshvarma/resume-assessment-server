@@ -3,6 +3,7 @@ import json
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
+from genfoundry.km.utils.doc_parser import DocumentParser
 
 answerTemplate = '''
         You are a talent acquisition expert. You are analyzing resumes in response to a job posting. Your job is to grade resumes against the job description and provide criteria scores, and a summary of the resume. The criteria scores should be between 0 and 10. For example, 9 or above means the candidate is very good in the criteria; between 7.5 and 9.0 means a good match against the criteria; between 6.0 and 7.5 means a fair match, etc. If the candidate does not match the criteria, score it as 0.
