@@ -21,11 +21,22 @@ class Config:
     CHUNK_SIZE = "700"
     CHUNK_OVERLAP = "50"
 
+    TEXT_EMBEDDING_MODEL = "text-embedding-ada-002"
+
     MONGO_DB_PASSWORD = "pvvrCbW8A7BIW8AS"
     # MongoDB URI template: "mongodb+srv://admin:<db_password>@genfoundrycluster.qjygr.mongodb.net/?retryWrites=true&w=majority&appName=GenFoundryCluster"
     MONGO_URI = "mongodb+srv://admin:pvvrCbW8A7BIW8AS@genfoundrycluster.qjygr.mongodb.net/?retryWrites=true&w=majority&appName=GenFoundryCluster&tls=true&connectTimeoutMS=30000&socketTimeoutMS=30000"
     MONGO_DB = "DocumentTracker"
     MONGO_COLLECTION = "Resumes"
+    MONGO_TENANT_COLLECTION = "Tenants"
+
+    REDIS_HOST = "deep-possum-14201.upstash.io"
+    REDIS_PORT = 6379
+    REDIS_PASSWORD = "ATd5AAIjcDE5MDEwNTI2Y2MwZWM0ZWUxYTgwNDQ4NTlmZjBkNmJlM3AxMA"
+    REDIS_SSL = True
+    ssl_cert_reqs = 'required'  # Ensure SSL certificate validation
+    ssl_ca_certs = None  # If you need a CA certificate, add it here
+
 
     FIREBASE_API_KEY = "AIzaSyDeDh6WxKXzSsS_iSVFGksM_d6UjZrvROw"
 
@@ -33,44 +44,14 @@ class Config:
 
     CORS_ALLOWED_ORIGIN = "https://recruitr.genfoundry.ca"
     
-    RESUME_DETAILS_POPUP_URL = "https://api.recruitr.genfoundry.ca/resumedetails"
-    #RESUME_DETAILS_POPUP_URL = "http://localhost:5001/resumedetails"
+    #RESUME_DETAILS_POPUP_URL = "https://api.recruitr.genfoundry.ca/resumedetails"
+    RESUME_DETAILS_POPUP_URL = "http://localhost:5001/resumedetails"
 
     JWT_SECRET_KEY = "761d296783aab0232a527dfb3776c3fcf1f5c9fc766eedc1c7ad1d6ede20fc8f"
 
     JWT_ALGORITHM = "HS256"
 
-    GENERAL_ANSWER_TEMPLATE = (
-        "You are an expert and are providing relevant answers to question asked based on the DOCUMENT provided in the context. \n"
-        "You should use a professional tone and provide comprehensive answers and do not leave out relevant points.\n"
-        "Answer the question based only on the given context. If you do not know the answer, say that you do not know.\n"
-        "Step 1. Find the relevant answer based on the DOCUMENT \n"
-        "Step 2. Format in a readable, user-friendly markdown format or paragraph as appropriate.\n"
-        "\n"
-        "DOCUMENT:\n"
-        "--------\n"
-        "{context}\n"
-        "\n"
-        "Question:\n"
-        "---------\n"
-        "{question}"
-    )
-
-    WVE_ANSWER_TEMPLATE = (
-        "You are an expert and are providing relevant answers to question asked based on the DOCUMENT provided in the context. \n"
-        "You should use a professional tone and provide comprehensive answers and do not leave out relevant points.\n"
-        "Answer the question based only on the given context. If you do not know the answer, say that you do not know.\n"
-        "Step 1. Find the relevant answer based on the DOCUMENT \n"
-        "Step 2. Format in a readable, user-friendly markdown format or paragraph as appropriate.\n"
-        "\n"
-        "DOCUMENT:\n"
-        "--------\n"
-        "{context}\n"
-        "\n"
-        "Question:\n"
-        "---------\n"
-        "{question}"
-    )
+    SIMILARITY_CUTOFF = 0.7
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -86,3 +67,40 @@ config = {
     'production': ProductionConfig,
     'default': Config
 }
+
+def get_redis_config_dict():
+    """Returns redis config as a dictionary."""
+    return {
+        'REDIS_HOST': Config.REDIS_HOST,
+        'REDIS_PORT': Config.REDIS_PORT,
+        'REDIS_PASSWORD': Config.REDIS_PASSWORD,
+        'REDIS_SSL': Config.REDIS_SSL,
+        'REDIS_SSL_CERT_REQS': Config.ssl_cert_reqs,
+        'REDIS_SSL_CA_CERTS': Config.ssl_ca_certs
+    }
+
+def get_api_key_config():
+    """Returns the configuration for API Keys."""
+    return {
+        'LANGCHAIN_API_KEY': Config.LANGCHAIN_API_KEY,
+        'OPENAI_API_KEY': Config.OPENAI_API_KEY,
+        'TAVILY_API_KEY': Config.TAVILY_API_KEY,
+        'PINECONE_API_KEY': Config.PINECONE_API_KEY
+    }
+
+def get_mongo_config():
+    """Returns MongoDB config as a dictionary."""
+    return {
+        'MONGO_URI': Config.MONGO_URI,
+        'MONGO_DB': Config.MONGO_DB,
+        'MONGO_COLLECTION': Config.MONGO_COLLECTION,
+        'MONGO_TENANT_COLLECTION': Config.MONGO_TENANT_COLLECTION
+    }
+
+def get_llm_config():
+    """Returns LLM config as a dictionary."""
+    return {
+        'LLM_MODEL': Config.LLM_MODEL,
+        'CHUNK_SIZE': Config.CHUNK_SIZE,
+        'CHUNK_OVERLAP': Config.CHUNK_OVERLAP
+    }

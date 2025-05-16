@@ -9,66 +9,58 @@ import os
 import re
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class PyMuPDFDocumentParser():
     def __init__(self) -> None:
-        logging.debug("Inside PyMuPDFDocumentParser instance init")
+        logger.debug("Inside PyMuPDFDocumentParser instance init")
 
-    def parse_document(self, file):
-        file_path = None  # Path to the original uploaded file
-        pdf_path = None   # Path to the converted PDF file
+    def parse_document(self, file_path):
+        pdf_path = None
+        original_file_path = file_path  # <=== Save the original uploaded file path
 
         try:
-            logging.debug(f"Inside parse_document method. Parsing document: {file}")
-            
-            # Save the file to a temporary location
-            temp_dir = tempfile.gettempdir()
-            file_path = os.path.join(temp_dir, file.filename)
-                
-            # Save the file to the temporary location with its original name
-            with open(file_path, "wb") as temp_file:
-                file.save(temp_file)
-                
-            logging.debug(f"======> Saved {file.filename} to local disk at: {file_path}")
+            logger.debug(f"Inside parse_document method. Parsing document: {file_path}")
+
             assert os.path.exists(file_path), f"File {file_path} not found."
-            
-            # Check the file extension
-            if file.filename.endswith('.docx'):
-                logging.debug("File is a .docx. Converting to PDF.")
-                pdf_path = os.path.join(temp_dir, file.filename.replace('.docx', '.pdf'))
 
-                # Convert the .docx to PDF
+            if file_path.endswith('.docx'):
+                logger.debug("File is a .docx. Converting to PDF.")
+                pdf_path = os.path.join(tempfile.gettempdir(), os.path.basename(file_path).replace('.docx', '.pdf'))
+
                 self.convert_docx_to_pdf(file_path, pdf_path)
-                logging.debug(f"Converted .docx to PDF. PDF saved at: {pdf_path}")
+                logger.debug(f"Converted .docx to PDF. PDF saved at: {pdf_path}")
 
-                # Update file_path to use the PDF for parsing
+                # Switch to parsing the generated PDF
                 file_path = pdf_path
 
-            # Read and parse the document
-            logging.debug(f"Loading data into PyMuPDF4LLM from {file_path}")
+            logger.debug(f"Loading data into PyMuPDF4LLM from {file_path}")
             docString = pymupdf4llm.to_markdown(f"{file_path}")
             docString = self.fix_mid_sentence_line_breaks(docString)
-            
-            # Extract the text from the first document
-            logging.debug(f"Document parsed successfully. Content: {docString}...")
 
+            logger.debug(f"Document parsed successfully.")
             return docString
 
         except Exception as e:
-            logging.error(f"Error parsing document: {e}")
+            logger.error(f"Error parsing document: {e}")
             return None
 
         finally:
-            # Ensure the temporary files are removed
-            files_to_remove = [file_path]
-            if pdf_path and pdf_path != file_path:
+            # Always attempt to remove temp files
+            files_to_remove = []
+
+            if original_file_path and os.path.exists(original_file_path):
+                files_to_remove.append(original_file_path)
+            if pdf_path and os.path.exists(pdf_path):
                 files_to_remove.append(pdf_path)
 
             for temp_file in files_to_remove:
-                if temp_file and os.path.exists(temp_file):
-                    logging.debug(f"Removing temporary file: {temp_file}")
+                try:
+                    logger.debug(f"Removing temporary file: {temp_file}")
                     os.remove(temp_file)
+                except Exception as e:
+                    logger.error(f"Failed to remove temporary file {temp_file}: {e}")
+
 
     def _docx_to_pdf(self, document, pdf_path):
         """
@@ -98,7 +90,7 @@ class PyMuPDFDocumentParser():
 
         # Save the PDF
         c.save()
-        logging.debug(f"Saved PDF to: {pdf_path}")
+        logger.debug(f"Saved PDF to: {pdf_path}")
 
 
     def fix_mid_sentence_line_breaks(self, text):
@@ -145,7 +137,7 @@ class PyMuPDFDocumentParser():
 
             print(f"Conversion successful! PDF saved at: {pdf_output_path}")
         except Exception as e:
-            print(f"Error during conversion: {e}")
+            logger.debug(f"Error during conversion: {e}")
 
     def extract_text_from_docx(self, file_path):
         """

@@ -1,11 +1,16 @@
-from flask import request, jsonify
+from flask import request, jsonify, g
 from flask_restful import Resource, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 from langchain_openai import ChatOpenAI
 from .pitch_notes_generator_tool import PitchNotesGenerator
 from genfoundry.km.preprocess.pymupdf_doc_parser import PyMuPDFDocumentParser
 import os
 import json
+import re
+import tempfile
+import uuid
+import unicodedata
 
 class PitchNotesGeneratorRunner(Resource):
     def __init__(self):
@@ -28,22 +33,45 @@ class PitchNotesGeneratorRunner(Resource):
             api_key=os.getenv("OPENAI_API_KEY"))
 
 
+    @jwt_required()  # Ensure the user is authenticated via JWT token
     def post(self):        
-        if 'criteria' not in request.files or 'resume' not in request.files or 'recruiterNotes' not in request.files:
-            return jsonify({"error": "Resume, recruiter's note and criteria files are required"}), 400
+        user_id = get_jwt_identity()
+        logging.debug(f"JWT identity (user_id): {user_id}")
+        if not user_id:
+            logging.warning("Unauthorized access attempt – no user_id in JWT.")
+            return jsonify({"error": "Unauthorized"}), 401
+
+        tenant_id = g.tenant_id
+        if not tenant_id:
+            return jsonify({"error": "Tenant ID is required"}), 400
+
+       # if 'criteria' not in request.files or 'resume' not in request.files or 'recruiterNotes' not in request.files:
+        #     return jsonify({"error": "Resume, recruiter's note and criteria files are required"}), 400
+
+        if 'resume' not in request.files or not request.form.get('criteriaText'):
+            return {"error": "Resume (file) and criteria (text) are required"}, 400
+
+        criteria = request.form.get('criteriaText')
+
+        recruiter_notes = request.form.get('recruiterNotesText')
+        if not recruiter_notes:
+            recruiter_notes = ""
+        else:
+            recruiter_notes = self.clean_pasted_text(recruiter_notes)
 
         # Get uploaded files
-        recruiter_note_file = request.files['recruiterNotes']
+        #recruiter_note_file = request.files['recruiterNotes']
         resume_file = request.files['resume']
-        criteria_file = request.files['criteria']
+        resume_filename = resume_file.filename
 
+        criteria = request.form.get('criteriaText')
+        criteria = self.clean_pasted_text(criteria)
         try:
-            recruiter_note = self.parser.parse_document(recruiter_note_file)
-            resume = self.parser.parse_document(resume_file)
-            criteria = self.parser.parse_document(criteria_file)
-
-            if not recruiter_note or not resume or not criteria:
-                return jsonify({"error": "Parsed content cannot be empty"}), 400
+            tmp_dir = tempfile.mkdtemp()
+            unique_filename = f"{tenant_id}_{uuid.uuid4().hex}_{resume_filename}"
+            tmp_path = os.path.join(tmp_dir, unique_filename)
+            resume_file.save(tmp_path) 
+            resume = self.parser.parse_document(tmp_path)
         except Exception as e:
             logging.error(f"Document parsing failed: {e}")
             return jsonify({"error": "Failed to parse uploaded files"}), 500
@@ -51,7 +79,7 @@ class PitchNotesGeneratorRunner(Resource):
         try:
             question = "Please assess the candidate's information provided in the resume and recruiter's note against the criteria. You may use the tools provided to assist you. The final answer should combine the results of the tools."
 
-            pitch_note_response = self.pitch_note_generator.assess(resume, recruiter_note, criteria, question)
+            pitch_note_response = self.pitch_note_generator.assess(resume, recruiter_notes, criteria, question)
             if pitch_note_response.startswith("json"):
                 pitch_note_response = pitch_note_response[4:].strip()
 
@@ -69,3 +97,22 @@ class PitchNotesGeneratorRunner(Resource):
             return "Server Error", 500
         
 
+    def clean_pasted_text(self, text: str) -> str:
+    # Normalize unicode (e.g., smart quotes to plain quotes)
+        text = unicodedata.normalize("NFKD", text)
+
+        # Replace smart quotes and dashes
+        replacements = {
+            '\u2018': "'", '\u2019': "'",   # Single quotes
+            '\u201c': '"', '\u201d': '"',   # Double quotes
+            '\u2013': '-', '\u2014': '-',   # Dashes
+            '\u00a0': ' ',                  # Non-breaking space
+        }
+
+        for bad, good in replacements.items():
+            text = text.replace(bad, good)
+
+        # Remove any other non-ASCII characters
+        text = re.sub(r'[^\x00-\x7F]+', '', text)
+
+        return text.strip()

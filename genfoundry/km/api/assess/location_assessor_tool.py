@@ -4,6 +4,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from tavily import TavilyClient
 import logging, os
+from pydantic import Field
+from typing import Literal
 
 locatonSearchAnswerTemplate = '''
         You are a helpful assistant. You are analyzing whether the candidate's location as provided in the resume is in the vicinity of the job location as per the criteria. You must use tavily_search_results_json tool for information search. You will provide a score against the location criteria.The criteria scores should be between 0 and 10. For example, 9 or above means the candidate's location fully matches the job location; between 7.5 and 9.0 means the candidate is within 50 kilometers of the job location; between 6.0 and 7.5 means the candidate is within 100 kilometers of the job location. If the candidate mentions "willing to relocate", score it as 8. If the candidate does not match the criteria, score it as 0.
@@ -28,8 +30,8 @@ locatonSearchAnswerTemplate = '''
         '''
 
 class LocationAssessorTool(BaseTool):
-    name = "Location Assessor"
-    description = "Use this tool when you need to assess a location provided in the resume against the location specified in the job description."
+    name: str = Field(default="Location Assessor")
+    description: str = "Use this tool when you need to assess a location provided in the resume against the location specified in the job description."
 
     def __init__(self):
         logging.debug("Initializing LocationAssessorTool...")

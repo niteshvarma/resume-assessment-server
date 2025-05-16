@@ -194,23 +194,43 @@ metadata_prompt = """
             Analyze the following resume and extract the following details as JSON:
             - Name of the candidate
             - Latest Job Title
+            - Other Job Titles
             - Career Domain (e.g., tech, medical, sales, education)
             - Total Years of Experience
             - Technical Skills (list 5-10)
             - Leadership Skills (list 5-10)
             - Highest Education Level
+            - Education
+            - Certifications (if any)
             - Current Location (City/State/Country if available)
 
+            For Career Domain, use the following categories only:
+                - "Technology"
+                - "Finance & Accounting"
+                - "Healthcare"
+                - "Education"
+                - "Sales & Marketing"
+                - "Human Resources"
+                - "Legal"
+                - "Operations"
+                - "Engineering"
+                - "Design"
+                - "Customer Support"
+                - "Product Management"
+            
             The JSON response format should be as follows:
             {{
                 "candidate_name": "",
                 "latest_job_title": "",
-                "career_domain": "",
-                "total_years_of_experience": 5,
-                "technical_skills": [],
-                "leadership_skills": [],
-                "highest_education_level": "",
-                "current_location": ""
+                "other_job_titles": ["Software Engineer", "Senior Software Manager", "Director of Engineering"],
+                "career_domain": "Technology",
+                "years_of_experience": 5,
+                "technical_skills": ["AWS", "Azure", "Python", "Java", "SQL"],
+                "leadership_skills": ["Team Management", "Mentoring", "Strategy", "Agile"],
+                "highest_education_level": "PhD",
+                "education": ["BS from Harvard", "MS from MIT"],
+                "certifications": ["AWS Certified", "PMP"],
+                "location": "Toronto, Canada"
             }}           
             
             Resume:

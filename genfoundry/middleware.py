@@ -13,7 +13,9 @@ def jwt_authentication():
     """
     # Skip JWT authentication for login route
     if request.path == "/login":
-        return  
+        return
+    if request.path == "/research/company":
+        return
 
     try:
         verify_jwt_in_request()  # Ensure request has a valid JWT

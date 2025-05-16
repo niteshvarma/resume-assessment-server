@@ -8,7 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import os
 from genfoundry.km.query.search import ResumeSearcher
-from genfoundry.km.query.fusion_search import FusionRetrieverSearcher
+#from genfoundry.km.query.fusion_search import FusionRetrieverSearcher
 
 
 # Configure logging

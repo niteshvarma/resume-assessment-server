@@ -1,5 +1,3 @@
-import os
-import json
 import logging
 import uuid
 from pinecone import Pinecone
@@ -11,29 +9,32 @@ from llama_index.core.schema import IndexNode
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
+from genfoundry.config import Config
 
-logging.basicConfig(level=logging.DEBUG)
-
+logger = logging.getLogger(__name__)
 
 class PineconeVectorizer:
     def __init__(self) -> None:
-        logging.debug("Initializing PineconeVectorizer")
+        logger.debug("Initializing PineconeVectorizer")
 
         # OpenAI settings
-        self.openai_api_key = os.getenv('OPENAI_API_KEY')
-        self.openai_llm = OpenAI(api_key=self.openai_api_key, model="gpt-4", temperature=0.0)
-        llm_model = os.getenv('LLM_MODEL')
+        llm_model = Config.LLM_MODEL
+        openai_api_key = Config.OPENAI_API_KEY
+        pinecone_api_key = Config.PINECONE_API_KEY
+
+        self.openai_llm = OpenAI(api_key=openai_api_key, model=llm_model, temperature=0.0)
+
         Settings.llm = OpenAI(model=llm_model, temperature=0.0)
-        embed_model = OpenAIEmbedding(model="text-embedding-ada-002")
+        embed_model = OpenAIEmbedding(model=Config.TEXT_EMBEDDING_MODEL, api_key=openai_api_key)        
         Settings.embed_model = embed_model
 
         # Pinecone settings
-        self.pinecone_api_key = os.getenv('PINECONE_API_KEY')
-        self.pinecone_index_name = os.getenv('PINECONE_INDEX', 'default-index')
+        self.pinecone_api_key = Config.PINECONE_API_KEY
+        self.pinecone_index_name = Config.PINECONE_INDEX
         #self.pinecone_namespace = os.getenv('PINECONE_NAMESPACE', 'resumes')
 
         # Initialize Pinecone connection
-        self.pinecone_client = Pinecone(api_key=self.pinecone_api_key)
+        self.pinecone_client = Pinecone(api_key=pinecone_api_key)
 
         # Configure the Pinecone vector store
         #self.vector_store = PineconeVectorStore(
@@ -52,11 +53,11 @@ class PineconeVectorizer:
             metadata (dict): Metadata extracted from the resume (e.g., latest job title, career domain, etc.).
         """
         try:
-            logging.debug(f"Vectorizing and storing resume {resume_id}")
-            logging.debug(f"Text resume:\n {text_resume}")
-            logging.debug(f"Metadata:\n {metadata}")
+            logger.debug(f"Vectorizing and storing resume {resume_id}")
+            logger.debug(f"Text resume:\n {text_resume}")
+            logger.debug(f"Metadata:\n {metadata}")
             metadata["doc_id"] = resume_id
-            logging.debug("Creating Document object for resume and metadata")
+            logger.debug("Creating Document object for resume and metadata")
             resume_doc = Document(
                 text=text_resume,
                 metadata=metadata,
@@ -64,7 +65,7 @@ class PineconeVectorizer:
             )            
 
             # Initialize JsonNodeParser with custom settings
-            logging.debug("Initializing Parser...")
+            logger.debug("Initializing Parser...")
             #json_node_parser = JSONNodeParser(
             #    include_metadata=True,      # Include metadata in each node
             #    include_prev_next_rel=True  # Maintain node relationships
@@ -72,21 +73,21 @@ class PineconeVectorizer:
             node_parser = SentenceSplitter(chunk_size=512, chunk_overlap=20)
 
             # Parse nodes using JSONNodeParser
-            logging.debug("Parsing nodes from document...")
+            logger.debug("Parsing nodes from document...")
             nodes = node_parser.get_nodes_from_documents([resume_doc])
-            logging.debug(f"Nodes parsed successfully: {len(nodes)} nodes found.")
+            logger.debug(f"Nodes parsed successfully: {len(nodes)} nodes found.")
 
             # Store nodes in Pinecone
-            logging.debug("Storing nodes in Pinecone...")
+            logger.debug("Storing nodes in Pinecone...")
             vectorstore = self.get_tenant_vectorestore(tenant_id)
             storage_ctx = StorageContext.from_defaults(vector_store=vectorstore)
             index = VectorStoreIndex(storage_context=storage_ctx, 
                                      nodes=[])
             index.insert_nodes(nodes)
 
-            logging.debug(f"Resume {resume_id} successfully stored in Pinecone.")
+            logger.debug(f"Resume {resume_id} successfully stored in Pinecone.")
         except Exception as e:
-            logging.error(f"Error vectorizing and storing resume {resume_id}: {e}")
+            logger.error(f"Error vectorizing and storing resume {resume_id}: {e}")
             raise
 
     def vectorize_and_store_text_resume(self, resume_id: str, 
@@ -98,44 +99,36 @@ class PineconeVectorizer:
 
         Args:
             resume_id (str): Unique identifier for the resume.
-            standardized_resume (dict): The standardized JSON representation of the resume.
-            metadata (dict): Metadata extracted from the resume (e.g., latest job title, career domain, etc.).
+            standardized_resume (dict): The standardized  representation of the resume.
+            metadata (dict): Metadata extracted from the resume (e.g., latest job title, career domain, etc.)
+            tenant_id (str): Unique identifier for the tenant.
         """
         try:
-            logging.debug(f"Vectorizing and storing resume {resume_id}")
-            logging.debug(f"Standardized resume:\n {resume}")
-            logging.debug(f"Metadata:\n {metadata}")
+            logger.debug(f"Vectorizing and storing resume {resume_id}")
+            logger.debug(f"Standardized resume:\n {resume}")
+            logger.debug(f"Metadata:\n {metadata}")
             metadata["doc_id"] = resume_id
             #resume_str = json.dumps(resume)
-            logging.debug("Creating Document object for resume and metadata")
+            logger.debug("Creating Document object for resume and metadata")
             resume_doc = Document(
                 text=resume,
                 metadata=metadata,
                 id_=resume_id
             )            
 
-            # Initialize JsonNodeParser with custom settings
-            logging.debug("Initializing Parser...")
-            #json_node_parser = JSONNodeParser(
-            #    include_metadata=True,      # Include metadata in each node
-            #    include_prev_next_rel=True  # Maintain node relationships
-            #)
-
-            logging.debug("Parsing nodes from document...")
-            ##############
-            # Ther following was the original working code (if the following code does not work, revert to this)
+            logger.debug("Parsing nodes from document...")
             node_parser = SentenceSplitter(chunk_size=512, chunk_overlap=20)
 
-            # Parse nodes using JSONNodeParser
+            # Parse nodes using SentenceSplitter
             nodes = node_parser.get_nodes_from_documents([resume_doc])
             ##############
             # Parse nodes recursively - added as a substitution for the above code
             #nodes = self._parse_recursively([resume_doc])
             ##############
-            logging.debug(f"Nodes parsed successfully: {len(nodes)} nodes found.")
+            logger.debug(f"Nodes parsed successfully: {len(nodes)} nodes found.")
 
             # Store nodes in Pinecone
-            logging.debug("Storing nodes in Pinecone...")
+            logger.debug("Storing nodes in Pinecone...")
             vectorstore = self.get_tenant_vectorestore(tenant_id)
 
             storage_ctx = StorageContext.from_defaults(vector_store=vectorstore)
@@ -143,10 +136,10 @@ class PineconeVectorizer:
                                      nodes=[])
             index.insert_nodes(nodes)
 
-            logging.debug(f"Resume {resume_id} successfully stored in Pinecone.")
+            logger.debug(f"Resume {resume_id} successfully stored in Pinecone.")
 
         except Exception as e:
-            logging.error(f"Error vectorizing and storing resume {resume_id}: {e}")
+            logger.error(f"Error vectorizing and storing resume {resume_id}: {e}")
             raise
 
     
@@ -158,14 +151,14 @@ class PineconeVectorizer:
             resume_id (str): Unique identifier for the resume.
         """
         try:
-            logging.debug(f"Deleting resume {resume_id}")
+            logger.debug(f"Deleting resume {resume_id}")
             vectorstore = self.get_tenant_vectorestore(tenant_id)
             storage_ctx = StorageContext.from_defaults(vector_store=vectorstore)
             pinecone_index = VectorStoreIndex(storage_context=storage_ctx, nodes=[])
             pinecone_index.delete(resume_id)
-            logging.debug(f"Resume {resume_id} successfully deleted from Pinecone.")
+            logger.debug(f"Resume {resume_id} successfully deleted from Pinecone.")
         except Exception as e:
-            logging.error(f"Error deleting resume {resume_id}: {e}")
+            logger.error(f"Error deleting resume {resume_id}: {e}")
             raise
 
     def _parse_recursively(self, base_nodes):

@@ -67,6 +67,7 @@ class ResumeStandardizerRunner(Resource):
                 return jsonify({"error": response.get("error", "Unknown error occurred")}), 500
         
             resume_id = f"Doc:{uuid.uuid4()}"
+            #resume_id = self.mongo_proxy.generate_next_resume_id(tenant_id)
             logging.debug(f"Processing resume with ID: {resume_id}")
             # Parse the standardized resume and metadata
             standardized_resume = response.get("standardized_resume", {})
