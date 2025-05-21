@@ -5,10 +5,10 @@ import os
 class Config:
     LANGCHAIN_TRACING_V2 = "true"
     LANGCHAIN_ENDPOINT = 'https://api.smith.langchain.com'
-    LANGCHAIN_API_KEY = "ls__6399eb5bb18e49a69f243e9d022f9890"
-    OPENAI_API_KEY = "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"
-    TAVILY_API_KEY = "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"
-    PINECONE_API_KEY = "257c8fda-70fd-4435-ac9f-5a03027a2846"
+    LANGCHAIN_API_KEY = ""
+    OPENAI_API_KEY = "sk-"
+    TAVILY_API_KEY = "tvly-"
+    PINECONE_API_KEY = ""
     ANTHROPIC_API_KEY = ""
     project_name = "pt-virtual-sparrow-50"
     PINECONE_INDEX = "default"
@@ -23,31 +23,30 @@ class Config:
 
     TEXT_EMBEDDING_MODEL = "text-embedding-ada-002"
 
-    MONGO_DB_PASSWORD = "pvvrCbW8A7BIW8AS"
-    # MongoDB URI template: "mongodb+srv://admin:<db_password>@genfoundrycluster.qjygr.mongodb.net/?retryWrites=true&w=majority&appName=GenFoundryCluster"
-    MONGO_URI = "mongodb+srv://admin:pvvrCbW8A7BIW8AS@genfoundrycluster.qjygr.mongodb.net/?retryWrites=true&w=majority&appName=GenFoundryCluster&tls=true&connectTimeoutMS=30000&socketTimeoutMS=30000"
+    MONGO_DB_PASSWORD = ""
+    MONGO_URI = ""
     MONGO_DB = "DocumentTracker"
     MONGO_COLLECTION = "Resumes"
     MONGO_TENANT_COLLECTION = "Tenants"
 
     REDIS_HOST = "deep-possum-14201.upstash.io"
     REDIS_PORT = 6379
-    REDIS_PASSWORD = "ATd5AAIjcDE5MDEwNTI2Y2MwZWM0ZWUxYTgwNDQ4NTlmZjBkNmJlM3AxMA"
+    REDIS_PASSWORD = ""
     REDIS_SSL = True
     ssl_cert_reqs = 'required'  # Ensure SSL certificate validation
     ssl_ca_certs = None  # If you need a CA certificate, add it here
 
 
-    FIREBASE_API_KEY = "AIzaSyDeDh6WxKXzSsS_iSVFGksM_d6UjZrvROw"
+    FIREBASE_API_KEY = ""
 
-    LLAMA_CLOUD_API_KEY = "llx-le3jKayUMdnLTwBu1WPZ1RiNIIxueP7aeLEMKQ7CJabtNwfn"
+    LLAMA_CLOUD_API_KEY = "llx-"
 
     CORS_ALLOWED_ORIGIN = "https://recruitr.genfoundry.ca"
     
     #RESUME_DETAILS_POPUP_URL = "https://api.recruitr.genfoundry.ca/resumedetails"
     RESUME_DETAILS_POPUP_URL = "http://localhost:5001/resumedetails"
 
-    JWT_SECRET_KEY = "761d296783aab0232a527dfb3776c3fcf1f5c9fc766eedc1c7ad1d6ede20fc8f"
+    JWT_SECRET_KEY = ""
 
     JWT_ALGORITHM = "HS256"
 
